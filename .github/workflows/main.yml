@@ -16,7 +16,7 @@ jobs:
     env:
       PROJECT_FILE: YourProjectName.csproj
       APP_NAME: DeliveryCalculator
-      VERSION: ${{ format('{0}.{1}', 1.0.0, github.run_number) }}
+      VERSION: ${{ format('{0}.{1}', '1.0.0', github.run_number) }}
     
     steps:
     
