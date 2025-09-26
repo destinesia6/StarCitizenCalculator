@@ -14,8 +14,8 @@ jobs:
       
     # 2. Define environment variables in the 'env' section
     env:
-      PROJECT_FILE: StarCitizenCalculator.csproj
-      APP_NAME: DeliveryCalculator
+      PROJECT_FILE: src/StarCitizenCalculator/StarCitizenCalculator.csproj
+      APP_NAME: StarCitizenCalculator
       VERSION: ${{ format('{0}.{1}', '1.0.0', github.run_number) }}
     
     steps:
