@@ -133,7 +133,7 @@ internal static class Program
         Console.WriteLine("========== Star Citizen Delivery Calculator ==========");
         Console.ResetColor();
 
-        // --- Input 1: Location Names ---
+        // --- Input 1: Location Names ----
         Console.WriteLine("\nFirst, enter the names of your 4 delivery locations.");
         for (int i = 0; i < 4; i++)
         {
