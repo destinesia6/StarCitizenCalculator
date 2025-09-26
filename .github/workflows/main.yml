@@ -1,0 +1,73 @@
+name: Auto-Versioning Release Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write 
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    
+    env:
+      PROJECT_FILE: StarCitizenCalculator.csproj
+      APP_NAME: StarCitizenCalculator
+      BASE_VERSION: 1.0.0
+      VERSION: ${{ env.BASE_VERSION }}.${{ github.run_number }}
+    
+    steps:
+    
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    # Step 3: Publish the console application
+    # We pass the generated version number to the publish command
+    - name: Publish (Build EXE) with Version
+      run: dotnet publish ${{ env.PROJECT_FILE }} --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:Version=${{ env.VERSION }} -o release_output
+      
+    # Step 4: Archive the output (Create the .zip file)
+    - name: Archive Build Artifact
+      shell: powershell
+      run: |
+        $zipFileName = "${{ env.APP_NAME }}_v${{ env.VERSION }}_Win-x64.zip"
+        Compress-Archive -Path .\release_output\* -DestinationPath $zipFileName
+        
+    - name: Create Git Tag
+      id: tag_create
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const newTag = `v${process.env.VERSION}`;
+          console.log(`Creating tag: ${newTag}`);
+          await github.rest.git.createRef({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: `refs/tags/${newTag}`,
+            sha: context.sha
+          });
+          core.setOutput('tag', newTag);
+        env:
+          VERSION: ${{ env.VERSION }}
+          
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ steps.tag_create.outputs.tag }} 
+        name: Build ${{ env.VERSION }}
+        body: |
+          Automatic release for build version ${{ env.VERSION }}.
+          
+          This build includes all commits since the last successful release.
+        draft: false
+        prerelease: false
+        files: ${{ env.APP_NAME }}_v${{ env.VERSION }}_Win-x64.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
