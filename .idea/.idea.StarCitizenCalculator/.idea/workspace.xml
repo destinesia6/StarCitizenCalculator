@@ -8,10 +8,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="02a38c14-42a4-4800-8109-69b5537f6450" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/StarCitizenCalculator.sln" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/StarCitizenCalculator/Program.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/StarCitizenCalculator/StarCitizenCalculator.csproj" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/StarCitizenCalculator/.github/workflows/release.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/StarCitizenCalculator/StarCitizenCalculator.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/StarCitizenCalculator/StarCitizenCalculator.csproj" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -24,6 +22,7 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProjectColorInfo"><![CDATA[{
   "customColor": "",
   "associatedIndex": 0
@@ -39,7 +38,7 @@
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master",
+    "git-widget-placeholder": "main",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -80,16 +79,28 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758895021489</updated>
-      <workItem from="1758895022751" duration="2400000" />
+      <workItem from="1758895022751" duration="2905000" />
     </task>
+    <task id="LOCAL-00001" summary="Initial push">
+      <option name="closed" value="true" />
+      <created>1758897496907</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1758897496907</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="UnityCheckinConfiguration" checkUnsavedScenes="true" />
   <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
+    <MESSAGE value="Initial push" />
+    <option name="LAST_COMMIT_MESSAGE" value="Initial push" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
