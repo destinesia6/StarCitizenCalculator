@@ -11,12 +11,12 @@ permissions:
 jobs:
   build-and-release:
     runs-on: windows-latest
-    
+      
+    # 2. Define environment variables in the 'env' section
     env:
-      PROJECT_FILE: StarCitizenCalculator.csproj
-      APP_NAME: StarCitizenCalculator
-      BASE_VERSION: 1.0.0
-      VERSION: ${{ env.BASE_VERSION }}.${{ github.run_number }}
+      PROJECT_FILE: YourProjectName.csproj
+      APP_NAME: DeliveryCalculator
+      VERSION: ${{ format('{0}.{1}', 1.0.0, github.run_number) }}
     
     steps:
     
