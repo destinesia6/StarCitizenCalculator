@@ -40,13 +40,20 @@ jobs:
         $zipFileName = "${{ env.APP_NAME }}_v${{ env.VERSION }}_Win-x64.zip"
         Compress-Archive -Path .\release_output\* -DestinationPath $zipFileName
         
+
     - name: Create Git Tag
       id: tag_create
       uses: actions/github-script@v7
       with:
+        # Pass environment variables directly as inputs to the action
+        VERSION: ${{ env.VERSION }} 
+        
         script: |
+          // Access the variable using the input name (e.g., 'VERSION')
           const newTag = `v${process.env.VERSION}`;
           console.log(`Creating tag: ${newTag}`);
+          
+          // ... rest of the script (uses core to set output) ...
           await github.rest.git.createRef({
             owner: context.repo.owner,
             repo: context.repo.repo,
@@ -54,8 +61,6 @@ jobs:
             sha: context.sha
           });
           core.setOutput('tag', newTag);
-        env:
-          VERSION: ${{ env.VERSION }}
           
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
