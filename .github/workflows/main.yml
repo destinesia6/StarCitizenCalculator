@@ -16,7 +16,7 @@ jobs:
     env:
       PROJECT_FILE: StarCitizenCalculator/StarCitizenCalculator.csproj
       APP_NAME: StarCitizenCalculator
-      VERSION: ${{ format('{0}.{1}', '1.0.0', github.run_number) }}
+      VERSION: ${{ format('{0}.{1}', '1.0', github.run_number) }}
     
     steps:
     
@@ -66,7 +66,7 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.tag_create.outputs.tag }} 
-        name: Build ${{ env.VERSION }}
+        name: Delivery Calculator ${{ env.VERSION }}
         body: |
           Automatic release for build version ${{ env.VERSION }}.
           
