@@ -1,0 +1,245 @@
+@using Spectre.Console
+@using StarCitizenCalculator
+@using static StarCitizenCalculator.Calculator
+@using RazorConsole.Core
+@using RazorConsole.Components
+@using Markup = RazorConsole.Components.Markup
+@inherits ComponentBase 
+@inject AppState Model
+
+@code {
+    // --- State and Handlers ---
+    
+    // Properties to hold processed data for the manifest stage
+    private List<PickupSummaryItem>? PickupSummary;
+    private Dictionary<string, List<DropSummaryItem>>? LocationDrops;
+    private int currentDropAmount;
+    private string currentDropAmountString = "";
+
+    private void NewManifest()
+    {
+        PickupSummary = [];
+        LocationDrops = [];
+        Model.LocationNames = ["", "", "", ""];
+        Model.Jobs = [];
+        Model.Stage = ApplicationStage.InputLocations;
+    }
+
+    // --- State 1: Input Locations ---
+    private void SaveLocations()
+    {
+        // Simple validation: ensure no location name is empty
+        Model.LocationNames = Model.LocationNames
+            .Select((name, index) => string.IsNullOrWhiteSpace(name) ? $"Location {index + 1}" : name)
+            .ToList();
+            
+        // Move to the next stage
+        Model.CurrentJob.ResourceName = "";
+        Model.Stage = ApplicationStage.InputJobs;
+    }
+
+    // --- State 2: Input Jobs ---
+    private void StartNewJob()
+    {
+        Model.CurrentJob = new DeliveryJob { ResourceName = Model.CurrentJob.ResourceName };
+        Model.CurrentLocationIndex = 0;
+    }
+
+    private void AddDropAmount()
+    {
+        // 1. Attempt to parse the string input
+        if (String.IsNullOrWhiteSpace(currentDropAmountString))
+        {
+            currentDropAmount = 0;
+        }
+        else if (Int32.TryParse(currentDropAmountString, out int amount) && amount >= 0)
+        {
+            currentDropAmount = amount; // Store the validated integer
+        }
+        else
+        {
+            return; 
+        }
+
+        string currentLocation = Model.LocationNames[Model.CurrentLocationIndex];
+        
+        // Add the validated integer amount to the job's drops
+        Model.CurrentJob.Drops.Add(currentLocation, currentDropAmount);
+        
+        // Reset the input string for the next location
+        currentDropAmountString = "";
+        Model.CurrentLocationIndex++;
+
+        if (Model.CurrentLocationIndex >= Model.LocationNames.Count)
+        {
+            FinalizeCurrentJob();
+        }
+    }
+
+    private void FinalizeCurrentJob()
+    {
+        // Only add the job if it has units to deliver
+        if (Model.CurrentJob.TotalNeeded > 0)
+        {
+            Model.Jobs.Add(Model.CurrentJob);
+        }
+        
+        Model.CurrentLocationIndex = -1;
+        Model.CurrentJob = new DeliveryJob { ResourceName = "" };
+    }
+
+    private void FinishJobsAndShowManifest()
+    {
+        if (Model.Jobs.Count == 0)
+        {
+            return;
+        }
+
+        // Process data for final output
+        (PickupSummary, LocationDrops) = ProcessJobs(Model.Jobs, Model.LocationNames);
+        
+        // Move to the final stage
+        Model.Stage = ApplicationStage.ShowManifest;
+    }
+}
+<Rows>
+    <Figlet Content="Cargo Manifest" Color="Color.Purple"/>
+
+    @* --- STAGE 1: INPUT LOCATIONS --- *@
+    @if (Model.Stage == ApplicationStage.InputLocations)
+    {
+        <Panel Title="1. Enter Delivery Locations" TitleColor="Color.Yellow">
+            <Rows>
+                <Columns>
+                    @for (int i = 0; i < Model.LocationNames.Count; i++)
+                    {
+                        int index = i; // Local copy for lambda capture
+                        <TextInput
+                            @bind-Value="Model.LocationNames[index]"
+                            Label="@($"Location {index + 1}:")"
+                            OnSubmit="() => { if (index < Model.LocationNames.Count - 1) { }else { SaveLocations(); } }"/>
+                    }
+                </Columns>
+                <TextButton Content="Save Locations and Continue" BackgroundColor="Color.Green" FocusedColor="Color.Green1" OnClick="SaveLocations"/>
+            </Rows>
+        </Panel>
+    }
+    else if (Model.Stage == ApplicationStage.InputJobs)
+    {
+        <Panel Title="2. Enter Job Details" TitleColor="Color.Yellow">
+            <Rows>
+                @if (Model.CurrentLocationIndex == -1)
+                {
+                    // Sub-Stage A: Enter Resource Name
+                    <TextInput @bind-Value="Model.CurrentJob.ResourceName"
+                               Label="Resource Name (or DONE to finish):"
+                               OnSubmit="@(() =>
+                                         {
+                                             if (Model.CurrentJob.ResourceName.Equals("done", StringComparison.OrdinalIgnoreCase))
+                                             {
+                                                 FinishJobsAndShowManifest();
+                                             }
+                                             else
+                                             {
+                                                 StartNewJob();
+                                             }
+                                         })"/>
+                }
+                else if (Model.CurrentLocationIndex < Model.LocationNames.Count)
+                {
+                    // Sub-Stage B: Enter Drop Amount for current location
+                    string currentLocation = Model.LocationNames[Model.CurrentLocationIndex];
+                    <Markup Content="@($"Job: {Model.CurrentJob.ResourceName} | Location: {currentLocation}")"></Markup>
+                    <TextInput
+                        @bind-Value="currentDropAmountString"
+                        Label="@($"Amount to drop at {currentLocation} (units, default 0):")"
+                        OnSubmit="AddDropAmount"/>
+                }
+                else
+                {
+                    <Markup Content="Error in job flow logic."></Markup>
+                }
+
+                @if (Model.Jobs.Count > 0)
+                {
+                    <TextButton Content="@("Finish All Jobs and Generate Manifest")" BackgroundColor="Color.Green" FocusedColor="Color.Green1" OnClick="FinishJobsAndShowManifest"/>
+                
+                    <Markup Content="@($"Jobs Entered: {Model.Jobs.Count}")"/>
+                }
+            </Rows>
+        </Panel>
+    }
+    else if (Model.Stage == ApplicationStage.ShowManifest)
+    {
+        <Panel Title="RESOURCE PICKUP SUMMARY" TitleColor="Color.Cyan">
+            @if (PickupSummary is not null)
+            {
+                <SpectreTable Title="@("Pickup List")" Expand="true">
+                    <SpectreTHead>
+                        <SpectreTR>
+                            <SpectreTH>Resource</SpectreTH>
+                            <SpectreTH Align="@Justify.Right">Total Units</SpectreTH>
+                            <SpectreTH Align="@Justify.Right">4u Boxes</SpectreTH>
+                            <SpectreTH Align="@Justify.Right">2u Boxes</SpectreTH>
+                            <SpectreTH Align="@Justify.Right">1u Boxes</SpectreTH>
+                        </SpectreTR>
+                    </SpectreTHead>
+
+                    <SpectreTBody>
+                        @if (PickupSummary is not null)
+                        {
+                            @foreach (var item in PickupSummary)
+                            {
+                                <SpectreTR>
+                                    <SpectreTD>@item.Resource</SpectreTD>
+                                    <SpectreTD>@item.TotalUnits</SpectreTD>
+                                    <SpectreTD>@item.Boxes.Box4</SpectreTD>
+                                    <SpectreTD>@item.Boxes.Box2</SpectreTD>
+                                    <SpectreTD>@item.Boxes.Box1</SpectreTD>
+                                </SpectreTR>
+                            }
+                        }
+                    </SpectreTBody>
+                </SpectreTable>
+            }
+        </Panel>
+        
+        <Panel Title="LOCATION DROPOFF LIST" TitleColor="Color.Cyan">
+            @if (LocationDrops is not null)
+            {
+                @foreach (var location in LocationDrops.OrderBy(d => d.Key))
+                {
+                    if (location.Value.Count > 0)
+                    {
+                        <SpectreTable Title="@($"Drops at {location.Key}")" Expand="true">
+                            <SpectreTHead>
+                                <SpectreTR>
+                                    <SpectreTH>Resource</SpectreTH>
+                                    <SpectreTH Align="@Justify.Right">Drop Units</SpectreTH>
+                                    <SpectreTH Align="@Justify.Right">4u</SpectreTH>
+                                    <SpectreTH Align="@Justify.Right">2u</SpectreTH>
+                                    <SpectreTH Align="@Justify.Right">1u</SpectreTH>
+                                </SpectreTR>
+                            </SpectreTHead>
+
+                            <SpectreTBody>
+                                @foreach (var drop in location.Value.OrderBy(d => d.Resource))
+                                {
+                                    <SpectreTR>
+                                        <SpectreTD>@drop.Resource</SpectreTD>
+                                        <SpectreTD>@drop.DropUnits</SpectreTD>
+                                        <SpectreTD>@drop.Boxes.Box4</SpectreTD>
+                                        <SpectreTD>@drop.Boxes.Box2</SpectreTD>
+                                        <SpectreTD>@drop.Boxes.Box1</SpectreTD>
+                                    </SpectreTR>
+                                }
+                            </SpectreTBody>
+                        </SpectreTable>
+                    }
+                }
+            }
+        </Panel>
+        <TextButton Content="New Manifest" BackgroundColor="Color.Orange4" FocusedColor="Color.Orange3" OnClick="NewManifest"></TextButton>
+        <Markup Content="Press Ctrl+C to exit."></Markup>
+    }
+</Rows>
