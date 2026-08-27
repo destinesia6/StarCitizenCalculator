@@ -9,7 +9,22 @@ permissions:
   contents: write 
 
 jobs:
+  mirror-code-to-aurorahub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Push Code & Tags to Forgejo 
+        run: |
+          git config --global credential.helper '!f() { echo "username=destinesia"; echo "password=${{ secrets.FORGEJO_TOKEN }}"; }; f'
+          git remote add forgejo https://code.aurorahub.uk/destinesia/StarCitizenCalculator.git
+          # This safely maps GitHub's refs directly to Forgejo, bypassing detached HEAD issues
+          git push forgejo '+refs/remotes/origin/*:refs/heads/*' --force
+          git push forgejo '+refs/tags/*:refs/tags/*' --force
+          
   build-and-release:
+    needs: mirror-code-to-aurorahub
     runs-on: windows-latest
       
     # 2. Define environment variables in the 'env' section
@@ -76,3 +91,13 @@ jobs:
         files: ${{ env.APP_NAME }}_v${{ env.VERSION }}_Win-x64.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Publish Windows Release to Forgejo
+      uses: akkuman/gitea-release-action@v1
+      with:
+        server_url: https://code.aurorahub.uk
+        repository: destinesia/StarCitizenCalculator
+        token: ${{ secrets.FORGEJO_TOKEN }}
+        tag_name: "${{ steps.tag_create.outputs.tag }}"
+        name: "Delivery Calculator ${{ env.VERSION }}"
+        files: ${{ env.APP_NAME }}_v${{ env.VERSION }}_Win-x64.zip
